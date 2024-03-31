@@ -21,7 +21,8 @@ class PlotControls(BaseModel):
         raw_data (Optional[bool]): Whether to show raw data in the plot. Default is False.
         printer_name (Optional[str]): The name of the printer. Default is 'generic'.
         initialization_data (Optional[dict]): Information about initial printing conditions. Default is an empty dictionary.
-            Values passed for initialization_data overwrite the default initialization_data of the printer.
+        
+        Values passed for initialization_data overwrite the default initialization_data of the printer.
     """
     color_type: Optional[str] = 'z_gradient'
     line_width: Optional[float] = 2
