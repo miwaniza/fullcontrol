@@ -10,6 +10,20 @@ Welcome to fullcontrol's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   tutorials/contents
+   tutorials/design_tips
+   tutorials/fast_demo
+   tutorials/gcode_controls
+   tutorials/geometry_functions
+   tutorials/lab_five_axis_demo
+   tutorials/lab_four_axis_demo
+   tutorials/lab_geometry
+   tutorials/lab_stl_output
+   tutorials/other_functions
+   tutorials/overview
+   tutorials/plot_controls
+   tutorials/state_objects
+
 
 
 Indices and tables
