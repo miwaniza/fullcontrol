@@ -1,48 +1,60 @@
-
 from fullcontrol.geometry import Point
 
 
+def reflectXY_axis(p: Point, axis: str = 'x') -> Point:
+    '''Return a Point that has been reflected about x=0 (axis='x') or y=0 (axis='y').'''
+    p_reflected = Point(x=p.x, y=p.y, z=p.z)
+    if axis == 'x':
+        p_reflected.y *= -1
+    elif axis == 'y':
+        p_reflected.x *= -1
+    return p_reflected
+
+
 def reflectXY_mc(p: Point, m_reflect: float, c_reflect: float) -> Point:
-    '''
-    Reflects the x and y values of a Point about a line defined by m and c.
-    
-    Parameters:
-        p (Point): The original Point to be reflected.
-        m_reflect (float): The slope of the reflection line.
-        c_reflect (float): The y-intercept of the reflection line.
-    
-    Returns:
-        Point: A new Point with the x and y values reflected about the line, and the original z value.
-    '''
-    m_reflect_normal = -1 / m_reflect  # gradient of the normal of the reflection line
-    # intercept of the normal of the reflection line
-    c_reflect_normal = p.y - (m_reflect_normal * p.x)
-    p_foot = Point(x=(c_reflect_normal - c_reflect) / (m_reflect - m_reflect_normal),  # See my onenote note (AG) - p_foot is the 'foot' of the original point on the reflection line
-                   y=(c_reflect_normal - ((m_reflect_normal / m_reflect) * c_reflect)) / (1 - (m_reflect_normal / m_reflect)))
-    return Point(x=p.x + 2 * (p_foot.x - p.x), y=p.y + 2 * (p_foot.y - p.y), z=p.z)
+    '''Reflects a point about a line y = mx + c.'''
+    if m_reflect == 0:  # Horizontal line case
+        y_reflect = 2 * c_reflect - p.y
+        return Point(x=p.x, y=y_reflect, z=p.z)
+    elif abs(m_reflect) == float('inf'):  # Vertical line case
+        x_reflect = 2 * c_reflect - p.x
+        return Point(x=x_reflect, y=p.y, z=p.z)
+    else:
+        # For any non-horizontal/non-vertical line:
+        # 1. Calculate perpendicular distance from point to line
+        d = ((m_reflect * p.x - p.y + c_reflect) / (1 + m_reflect * m_reflect)**0.5)
+        # 2. Calculate the point reflection by moving twice the distance in perpendicular direction
+        dx = 2 * d / (1 + m_reflect * m_reflect)**0.5
+        dy = 2 * d * m_reflect / (1 + m_reflect * m_reflect)**0.5
+        return Point(x=p.x - dx, y=p.y - dy, z=p.z)
 
 
 def reflectXY(p: Point, p1_reflect: Point, p2_reflect: Point) -> Point:
-    '''
-    Reflects the x and y values of a Point about a line defined by two Points.
-    
-    Parameters:
-        p (Point): The Point to be reflected.
-        p1_reflect (Point): The first Point defining the reflection line.
-        p2_reflect (Point): The second Point defining the reflection line.
-    
-    Returns:
-        Point: A new Point with the original z value and the reflected x and y values.
-    '''
-    # the if and elif avoid numerical errors associated with calculating the gradient of a vertical line
-    if p2_reflect.x - p1_reflect.x == 0:  # reflection line in Y direction
-        return Point(x=p.x + 2 * (p1_reflect.x - p.x), y=p.y, z=p.z)
-    elif p2_reflect.y - p1_reflect.y == 0:  # reflection line in X direction
-        return Point(x=p.x, y=p.y + 2 * (p1_reflect.y - p.y), z=p.z)
+    '''Reflects a point about a line defined by two points.'''
+    if p2_reflect.x - p1_reflect.x == 0:  # Vertical line
+        x_reflect = 2 * p1_reflect.x - p.x
+        return Point(x=x_reflect, y=p.y, z=p.z)
+    elif p2_reflect.y - p1_reflect.y == 0:  # Horizontal line
+        y_reflect = 2 * p1_reflect.y - p.y
+        return Point(x=p.x, y=y_reflect, z=p.z)
     else:
-        # gradient of reflection line
-        m_reflect = (p2_reflect.y - p1_reflect.y) / \
-            (p2_reflect.x - p1_reflect.x)
-        # intercept of reflection line
+        # Calculate line equation y = mx + c
+        m_reflect = (p2_reflect.y - p1_reflect.y) / (p2_reflect.x - p1_reflect.x)
         c_reflect = p1_reflect.y - (m_reflect * p1_reflect.x)
         return reflectXY_mc(p, m_reflect, c_reflect)
+
+
+def reflectXY_points(points, line_point1, line_point2):
+    """
+    Reflects points across a line defined by two points.
+    
+    Args:
+        points: Points to reflect
+        line_point1: First point defining reflection line
+        line_point2: Second point defining reflection line
+        
+    Returns:
+        Reflected points
+    """
+    return [reflectXY(p, line_point1, line_point2) for p in points]
+    pass

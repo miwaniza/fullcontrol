@@ -11,7 +11,7 @@ def test_fan_gcode():
         Fan(speed_percent=50),
         Point(x=10, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     assert "M106" in result  # Fan control command
@@ -33,7 +33,7 @@ def test_hotend_gcode():
         Hotend(temp=200, wait=True),
         Point(x=20, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     assert "M104 S200" in result  # Set temp without waiting
@@ -45,7 +45,7 @@ def test_hotend_multi_tool():
         Hotend(temp=200, tool=0),
         Hotend(temp=210, tool=1)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     assert "M104 S200 T0" in result
@@ -58,7 +58,7 @@ def test_buildplate_gcode():
         Buildplate(temp=60, wait=True),
         Point(x=10, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     assert "M190 S60" in result  # Set bed temp and wait
@@ -73,7 +73,7 @@ def test_combined_auxiliary_controls():
         Fan(speed_percent=100),
         Point(x=10, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     # Check presence and order of commands

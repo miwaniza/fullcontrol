@@ -1,4 +1,4 @@
-1.0.0
+1.1.0
 
 Changes:
 - Added floating point precision improvements with _clean_float function (fullcontrol/geometry/arcs.py, fullcontrol/geometry/polar.py)
@@ -10,3 +10,10 @@ Changes:
 - Enhanced error messages for invalid attributes (fullcontrol/base.py)
 - Fixed floating point precision issues in geometric calculations (fullcontrol/geometry/arcs.py, fullcontrol/geometry/polar.py)
 - Fixed inheritance of coordinate values in points_only function (fullcontrol/extra_functions.py)
+- Improved wave generation (square, triangle, sine) with consistent spacing and shapes
+- Enhanced shape generation with better clockwise/counterclockwise handling
+- Improved path segmentation with equal distance points for curves
+- Fixed reflection calculations about arbitrary lines and points
+- Updated angle measurement with proper range normalization
+- Enhanced G-code configuration with proper inheritance and overrides
+- Fixed start/end G-code handling in printer configurations

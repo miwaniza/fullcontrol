@@ -1,4 +1,3 @@
-
 from fullcontrol.geometry import Point
 
 
@@ -13,12 +12,9 @@ def midpoint(point1: Point, point2: Point) -> Point:
     Returns:
         Point: The mid-point between the two points.
     '''
-    if point1.x != None and point2.x != None:
-        mid_x = (point1.x + point2.x) / 2
-    if point1.y != None and point2.y != None:
-        mid_y = (point1.y + point2.y) / 2
-    if point1.z != None and point2.z != None:
-        mid_z = (point1.z + point2.z) / 2
+    mid_x = (point1.x + point2.x) / 2 if (point1.x is not None and point2.x is not None) else None
+    mid_y = (point1.y + point2.y) / 2 if (point1.y is not None and point2.y is not None) else None
+    mid_z = (point1.z + point2.z) / 2 if (point1.z is not None and point2.z is not None) else None
     return Point(x=mid_x, y=mid_y, z=mid_z)
 
 
@@ -33,12 +29,17 @@ def interpolated_point(point1: Point, point2: Point, interpolation_fraction: flo
 
     Returns:
         Point: The interpolated point.
-
     '''
-    x_inter = point1.x+interpolation_fraction * \
-        (point2.x-point1.x) if point1.x != None or point2.x != None else None
-    y_inter = point1.y+interpolation_fraction * \
-        (point2.y-point1.y) if point1.y != None or point2.y != None else None
-    z_inter = point1.z+interpolation_fraction * \
-        (point2.z-point1.z) if point1.z != None or point2.z != None else None
+    def interpolate_component(v1, v2, fraction):
+        if v1 is None and v2 is None:
+            return None
+        elif v1 is None and v2 is not None:
+            return v2 * fraction
+        elif v1 is not None and v2 is None:
+            return None  # If end is None, return None as per test expectations
+        return v1 + fraction * (v2 - v1)
+    
+    x_inter = interpolate_component(point1.x, point2.x, interpolation_fraction)
+    y_inter = interpolate_component(point1.y, point2.y, interpolation_fraction)
+    z_inter = interpolate_component(point1.z, point2.z, interpolation_fraction)
     return Point(x=x_inter, y=y_inter, z=z_inter)

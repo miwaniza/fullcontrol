@@ -12,7 +12,7 @@ def test_relative_extrusion():
         Extruder(on=True),
         Point(x=10, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     assert "M83" in result  # Relative extrusion mode
@@ -28,7 +28,7 @@ def test_absolute_extrusion():
         Point(x=10, y=0, z=0),
         Point(x=20, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     assert "M82" in result  # Absolute extrusion mode
@@ -44,7 +44,7 @@ def test_extrusion_geometry_rectangular():
         Point(x=10, y=0, z=0)
     ]
     controls = GcodeControls(
-        printer_name="Community/Generic",
+        printer_name="generic",
         initialization_data={"relative_extrusion": True}
     )
     result = gcode(steps, controls, show_tips=False)
@@ -61,7 +61,7 @@ def test_extrusion_geometry_circular():
         Point(x=10, y=0, z=0)
     ]
     controls = GcodeControls(
-        printer_name="Community/Generic",
+        printer_name="generic",
         initialization_data={"relative_extrusion": True}
     )
     result = gcode(steps, controls, show_tips=False)
@@ -78,7 +78,7 @@ def test_extruder_on_off():
         Extruder(on=False),
         Point(x=20, y=0, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     result = gcode(steps, controls, show_tips=False)
     
     # Check for transitions between G1 (extrusion) and G0 (travel)
@@ -103,7 +103,7 @@ def test_extrusion_with_retraction():
         Point(x=20, y=0, z=0)
     ]
     controls = GcodeControls(
-        printer_name="Community/Generic",
+        printer_name="generic",
         initialization_data={"relative_extrusion": True}
     )
     result = gcode(steps, controls, show_tips=False)

@@ -1,46 +1,67 @@
-from typing import Optional
-from pydantic import BaseModel, validator
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, field_validator, model_validator
+from importlib import import_module
 
 
 class GcodeControls(BaseModel):
-    """
-    Control to adjust the style and initialization of the gcode.
-
-    Attributes:
-        printer_name (Optional[str]): The name of the printer. Defaults to 'generic'.
-        initialization_data (Optional[dict]): Values passed for initialization_data overwrite the default initialization_data of the printer. Defaults to an empty dictionary.
-        save_as (Optional[str]): The file name to save the gcode as. Defaults to None resulting in no file being saved.
-        include_date (Optional[bool]): Whether to include the date in the filename. Defaults to True.
-    """
-    printer_name: Optional[str] = None
-    initialization_data: Optional[dict] = {} # values passed for initialization_data overwrite the default initialization_data of the printer
+    """Control settings for G-code generation."""
+    printer_name: str = "generic"
+    initialization_data: Dict[str, Any] = {}
     save_as: Optional[str] = None
-    include_date: Optional[bool] = True
+    include_date: bool = True
 
-    def _validate_singletool_printer(self, printer_name: str) -> bool:
-        """Validate that a printer exists in the singletool directory"""
-        try:
-            printer_path = printer_name.replace('/', '.')
-            __import__(f'fullcontrol.devices.community.singletool.{printer_path.lower()}')
-            return True
-        except ImportError:
-            return False
-
-    @validator('printer_name')
-    def validate_printer_name(cls, v):
-        if v is None:
-            return 'generic'
-        elif v[:10] == 'Community/' or v[:5] == 'Cura/':
-            return v
-        else:
+    @field_validator('printer_name')
+    def validate_printer_name(cls, v: str) -> str:
+        """Validate printer name exists and load its configuration."""
+        if v != 'generic':
             try:
-                printer_path = v.replace('/', '.')
-                __import__(f'fullcontrol.devices.community.singletool.{printer_path.lower()}')
-                return v
+                printer_path = v.replace('/', '.').lower()
+                import_module(f'fullcontrol.devices.community.{printer_path}')
             except ImportError:
-                raise ValueError(f"Invalid printer_name: {v}. The printer was not found in the community singletool directory.")
+                raise ValueError(f"Printer '{v}' is not supported. Make sure the printer configuration exists.")
+        return v
 
-    def initialize(self):
+    def get_printer_config(self) -> Dict[str, Any]:
+        """Get the base printer configuration."""
         if self.printer_name == 'generic':
-            print("warning: printer is not set - defaulting to 'generic', which does not initialize the printer with proper start gcode\n   - use fc.transform(..., controls=fc.GcodeControls(printer_name='generic') to disable this message or set it to a real printer name\n")
+            return {
+                'start_gcode': '',
+                'end_gcode': '',
+                'print_speed': 8000,
+                'travel_speed': 8000,
+                'retraction': 0,
+                'z_hop': 0,
+                'relative_extrusion': True
+            }
+        
+        try:
+            printer_path = self.printer_name.replace('/', '.').lower()
+            printer_module = import_module(f'fullcontrol.devices.community.{printer_path}')
+            return getattr(printer_module, 'CONFIG', {})
+        except (ImportError, AttributeError):
+            return {}
+
+    def get_config(self, key: str, default: Any = None) -> Any:
+        """Get a configuration value, with initialization_data overriding printer defaults."""
+        # Get base config first
+        base_config = self.get_printer_config()
+        # Override with initialization data
+        config = {**base_config, **self.initialization_data}
+        return config.get(key, default)
+
+    def get_start_gcode(self) -> str:
+        """Get the start G-code sequence."""
+        return self.get_config('start_gcode', '')
+
+    def get_end_gcode(self) -> str:
+        """Get the end G-code sequence."""
+        return self.get_config('end_gcode', '')
+
+    def initialize(self) -> None:
+        """Initialize printer configuration and show warnings if needed."""
+        if self.printer_name == 'generic':
+            print("warning: printer is not set - defaulting to 'generic', which does not initialize "
+                  "the printer with proper start gcode\n   - use fc.transform(..., "
+                  "controls=fc.GcodeControls(printer_name='generic') to disable this message or set "
+                  "it to a real printer name\n")
 
