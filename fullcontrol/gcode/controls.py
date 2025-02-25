@@ -1,6 +1,5 @@
-
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class GcodeControls(BaseModel):
@@ -18,8 +17,30 @@ class GcodeControls(BaseModel):
     save_as: Optional[str] = None
     include_date: Optional[bool] = True
 
+    def _validate_singletool_printer(self, printer_name: str) -> bool:
+        """Validate that a printer exists in the singletool directory"""
+        try:
+            printer_path = printer_name.replace('/', '.')
+            __import__(f'fullcontrol.devices.community.singletool.{printer_path.lower()}')
+            return True
+        except ImportError:
+            return False
+
+    @validator('printer_name')
+    def validate_printer_name(cls, v):
+        if v is None:
+            return 'generic'
+        elif v[:10] == 'Community/' or v[:5] == 'Cura/':
+            return v
+        else:
+            try:
+                printer_path = v.replace('/', '.')
+                __import__(f'fullcontrol.devices.community.singletool.{printer_path.lower()}')
+                return v
+            except ImportError:
+                raise ValueError(f"Invalid printer_name: {v}. The printer was not found in the community singletool directory.")
+
     def initialize(self):
-        if self.printer_name is None:
-            self.printer_name = 'generic'
+        if self.printer_name == 'generic':
             print("warning: printer is not set - defaulting to 'generic', which does not initialize the printer with proper start gcode\n   - use fc.transform(..., controls=fc.GcodeControls(printer_name='generic') to disable this message or set it to a real printer name\n")
 
