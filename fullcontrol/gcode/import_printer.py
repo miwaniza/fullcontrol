@@ -36,7 +36,11 @@ def replace_gcode_variables(printer_name: str, gcode_type: str, data: dict):
 def import_printer(printer_name: str, user_overrides: dict):
     library_name = 'cura' if printer_name[:5] == 'Cura/' else 'community_minimal'
     printer_name = printer_name[5:] if library_name == 'cura' else printer_name[10:]
+    print(f"Debug: library_name={library_name}, printer_name={printer_name}")  # Debug print
     library = load_json(library_name, os.path.join('library.json'))
+    print(f"Debug: library={library}")  # Debug print
+    if printer_name not in library:
+        raise ValueError(f"Printer '{printer_name}' not found in the library '{library_name}'")
     data = import_module(f'fullcontrol.devices.{library_name}.settings.{library[printer_name]}').default_initial_settings
     if library_name == 'cura':
         data['print_speed'] = int(data['print_speed']*60)

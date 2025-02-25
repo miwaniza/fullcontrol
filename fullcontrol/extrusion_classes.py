@@ -55,5 +55,7 @@ class Extruder(BaseModelPlus):
 
     Attributes:
         on (bool, optional): Indicates whether extrusion is on or off.
+        retraction (float, optional): The retraction distance in mm when turning extrusion off.
     """
     on: Optional[bool] = None
+    retraction: Optional[float] = None

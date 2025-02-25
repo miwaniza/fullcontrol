@@ -62,6 +62,7 @@ class State(BaseModel):
         self.extruder = Extruder(
             units=initialization_data['e_units'],
             dia_feed=initialization_data['dia_feed'],
+            relative_gcode=initialization_data.get('relative_extrusion', False),
             total_volume=0,
             total_volume_ref=0,
             travel_format=initialization_data['travel_format'])
@@ -81,5 +82,11 @@ class State(BaseModel):
             height=initialization_data['extrusion_height'])
         self.extrusion_geometry.update_area()
 
-        primer_steps = import_module(f'fullcontrol.gcode.primer_library.{initialization_data["primer"]}').primer(first_point(steps))
+        try:
+            initial_point = first_point(steps)
+        except Exception:
+            initial_point = Point(x=0, y=0, z=0)
+            steps.insert(0, initial_point)
+        
+        primer_steps = import_module(f'fullcontrol.gcode.primer_library.{initialization_data["primer"]}').primer(initial_point)
         self.steps = initialization_data['starting_procedure_steps'] + primer_steps + steps + initialization_data['ending_procedure_steps']

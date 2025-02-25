@@ -54,6 +54,7 @@ class Extruder(BaseExtruder):
         total_volume (float, optional): The current extrusion volume for the whole print. Calculated automatically.
         total_volume_ref (float, optional): The total extrusion volume reference value. This attribute is set to allow extrusion to be expressed relative to this point. For relative_gcode = True, it is reset for every line. Calculated automatically.
         travel_format (str, optional): The format for travel moves in the GCode. If not specified, a default format is used.
+        retraction (float, optional): The retraction distance when the extruder is turned off.
     '''
 
     # gcode additions to generic Extruder class
@@ -71,6 +72,7 @@ class Extruder(BaseExtruder):
     # total extrusion volume reference value - this attribute is set to allow extrusion to be expressed relative to this point (for relative_gcode = True, it is reset for every line)
     total_volume_ref: Optional[float] = None
     travel_format: Optional[str] = None
+    retraction: Optional[float] = None
 
     def get_and_update_volume(self, volume):
         '''Calculate the extrusion volume and update the total volume.
@@ -149,6 +151,9 @@ class Extruder(BaseExtruder):
         if self.on != None:
             # change in case strategy changed from printing to moving fast without extrusion
             state.printer.speed_changed = True
+            if self.retraction:
+                # Handle retraction when extruder is turned off
+                return f"G1 E-{self.retraction}"
         if self.units != None or self.dia_feed != None:
             state.extruder.update_e_ratio()
         if self.relative_gcode != None:
