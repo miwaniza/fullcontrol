@@ -39,3 +39,19 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+
+    - name: CI Badges
+      # You may pin to the exact commit or the version.
+      # uses: GaelGirodon/ci-badges-action@d4394e8ae1180779c579e768aea23a0e7b02c53a
+      uses: GaelGirodon/ci-badges-action@v1.7.0
+      with:
+        # The unique identifier of the Gist.
+        gist-id: 12d01c300d99a4b721660678356c6ae9
+        # GitHub REST API access token.
+        token: ${{ secrets.GIST_TOKEN }}
+        # Filenames prefix (default: repository name).
+        # prefix: # optional, default is $GITHUB_REPOSITORY_NAME
+        # Include the short ref name (branch or tag) in filenames.
+        # ref: # optional, default is false
+              
+
