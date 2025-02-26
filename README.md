@@ -1,5 +1,7 @@
 # FullControl
 
+[![codecov](https://codecov.io/github/miwaniza/fullcontrol/graph/badge.svg?token=EQ8NVVLHNL)](https://codecov.io/github/miwaniza/fullcontrol)
+
 ## FullControl - unconstrained design
 
 fullcontrol allows you to control 3D printers, or other cnc systems, in ways that are not possible using conventional software
