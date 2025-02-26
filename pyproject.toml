@@ -32,3 +32,6 @@ packages = ["fullcontrol", "lab"]
 "Documentation" = "https://github.com/FullControlXYZ/fullcontrol/tree/master/docs"
 "Tutorials" = "https://github.com/FullControlXYZ/fullcontrol/tree/master/tutorials"
 "Bug Tracker" = "https://github.com/FullControlXYZ/fullcontrol/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

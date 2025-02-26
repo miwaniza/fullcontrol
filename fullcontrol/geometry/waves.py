@@ -5,25 +5,35 @@ from math import pi, tau, sin, cos, atan2
 def squarewaveXYpolar(start_point: Point, direction_polar: float, amplitude: float, line_spacing: float, periods: int, extra_half_period: bool = False, extra_end_line: bool = False) -> list:
     '''Generate a squarewave with the set number of periods, starting at the start_point.'''
     steps = []
-    steps.append(start_point.copy())
+    current = start_point.copy()
+    steps.append(current)
 
     for i in range(periods):
         # Up
-        steps.append(polar_to_point(centre=steps[-1], radius=amplitude, angle=direction_polar + pi/2))
-        # Horizontal movement is line_spacing/2 to match test expectations
-        steps.append(polar_to_point(centre=steps[-1], radius=line_spacing/2, angle=direction_polar))
+        current = polar_to_point(centre=current, radius=amplitude, angle=direction_polar + pi/2)
+        steps.append(current)
+        
+        # Right (half line_spacing)
+        current = polar_to_point(centre=current, radius=line_spacing/2, angle=direction_polar)
+        steps.append(current)
+        
         # Down
-        steps.append(polar_to_point(centre=steps[-1], radius=amplitude, angle=direction_polar - pi/2))
-        if i < periods - 1:
-            # Right (to next period), line_spacing/2 to match test expectations
-            steps.append(polar_to_point(centre=steps[-1], radius=line_spacing/2, angle=direction_polar))
+        current = polar_to_point(centre=current, radius=2*amplitude, angle=direction_polar - pi/2)
+        steps.append(current)
+        
+        # Right (half line_spacing)
+        current = polar_to_point(centre=current, radius=line_spacing/2, angle=direction_polar)
+        steps.append(current)
 
     if extra_half_period:
-        steps.append(polar_to_point(centre=steps[-1], radius=line_spacing/2, angle=direction_polar))
-        steps.append(polar_to_point(centre=steps[-1], radius=amplitude, angle=direction_polar + pi/2))
-
-    if extra_end_line:
-        steps.append(polar_to_point(centre=steps[-1], radius=line_spacing/2, angle=direction_polar))
+        # Up for half period
+        current = polar_to_point(centre=current, radius=amplitude, angle=direction_polar + pi/2)
+        steps.append(current)
+        
+        # Optional extra line at end
+        if extra_end_line:
+            current = polar_to_point(centre=current, radius=line_spacing/2, angle=direction_polar)
+            steps.append(current)
 
     return steps
 
@@ -41,27 +51,32 @@ def squarewaveXY(start_point: Point, direction_vector: Vector, amplitude: float,
 def trianglewaveXYpolar(start_point: Point, direction_polar: float, amplitude: float, tip_separation: float, periods: int, extra_half_period: bool = False) -> list:
     '''Generate a triangle wave with given parameters.'''
     steps = []
-    steps.append(start_point.copy())
+    current = start_point.copy()
+    steps.append(current)
 
     for i in range(periods):
-        # Up and right to upper tip (half tip_separation movement per step)
-        upper_point = polar_to_point(centre=start_point, radius=amplitude, angle=direction_polar + pi/2)
-        upper_point = polar_to_point(centre=upper_point, radius=tip_separation/2 * (i+1), angle=direction_polar)
-        steps.append(upper_point)
-
-        # Down and right to lower tip
-        lower_point = polar_to_point(centre=upper_point, radius=amplitude*2, angle=direction_polar - pi/2)
-        steps.append(lower_point)
-
+        # Up to peak
+        current = polar_to_point(centre=current, radius=amplitude, angle=direction_polar + pi/2)
+        steps.append(current)
+        
+        # Down and right to valley
+        valley = polar_to_point(centre=current, radius=2*amplitude, angle=direction_polar - pi/2)
+        current = polar_to_point(centre=valley, radius=tip_separation, angle=direction_polar)
+        steps.append(current)
+        
+        # For all but last period, return to midpoint to start next period
         if i < periods - 1:
-            next_point = polar_to_point(centre=lower_point, radius=tip_separation/2, angle=direction_polar)
-            steps.append(next_point)
+            current = polar_to_point(centre=current, radius=amplitude, angle=direction_polar + pi/2)
+            steps.append(current)
 
+    # Add half period if requested (move right half distance, then up)
     if extra_half_period:
-        # Move right, then up for half period
-        half_point = polar_to_point(centre=steps[-1], radius=tip_separation/2, angle=direction_polar)
-        steps.append(half_point)
-        steps.append(polar_to_point(centre=half_point, radius=amplitude, angle=direction_polar + pi/2))
+        # Move right half tip separation
+        current = polar_to_point(centre=current, radius=tip_separation/2, angle=direction_polar)
+        steps.append(current)
+        # Move up to complete half period
+        current = polar_to_point(centre=current, radius=amplitude, angle=direction_polar + pi/2)
+        steps.append(current)
 
     return steps
 
@@ -69,16 +84,25 @@ def trianglewaveXYpolar(start_point: Point, direction_polar: float, amplitude: f
 def sinewaveXYpolar(start_point: Point, direction_polar: float, amplitude: float, period_length: float, periods: int, segments_per_period: int = 16, extra_half_period: bool = False, phase_shift: float = 0) -> list:
     '''Generate a sine wave with given parameters.'''
     steps = []
-    total_segments = periods * segments_per_period
+    
+    # Calculate total number of segments
+    total_segments = segments_per_period * periods
     if extra_half_period:
         total_segments += segments_per_period // 2
-    
-    # Generate points along the sine wave in standard position (horizontal)
+        
+    # Generate points along the wave
     for i in range(total_segments + 1):
-        angle = (2 * pi * i) / segments_per_period  # Angle in current cycle
-        x = (period_length * i) / segments_per_period
-        y = amplitude * sin(angle + phase_shift)
-        steps.append(Point(x=x, y=y, z=start_point.z))
+        t = i / segments_per_period  # Position in periods
+        angle = 2 * pi * t + phase_shift  # Angle for sine calculation
+        
+        # Calculate local coordinates (before rotation)
+        local_x = t * period_length
+        local_y = amplitude * sin(angle)
+        
+        # Transform to global coordinates using rotation matrix
+        global_x = start_point.x + local_x * cos(direction_polar) - local_y * sin(direction_polar)
+        global_y = start_point.y + local_x * sin(direction_polar) + local_y * cos(direction_polar)
+        
+        steps.append(Point(x=global_x, y=global_y, z=start_point.z))
     
-    # Rotate and translate the wave to match the desired direction and starting point
-    return move_polar(steps, start_point, 0, direction_polar)
+    return steps

@@ -21,20 +21,23 @@ def reflectXY_mc(p: Point, m_reflect: float, c_reflect: float) -> Point:
         return Point(x=x_reflect, y=p.y, z=p.z)
     else:
         # For any non-horizontal/non-vertical line:
-        # 1. Calculate perpendicular distance from point to line
-        d = ((m_reflect * p.x - p.y + c_reflect) / (1 + m_reflect * m_reflect)**0.5)
-        # 2. Calculate the point reflection by moving twice the distance in perpendicular direction
-        dx = 2 * d / (1 + m_reflect * m_reflect)**0.5
-        dy = 2 * d * m_reflect / (1 + m_reflect * m_reflect)**0.5
-        return Point(x=p.x - dx, y=p.y - dy, z=p.z)
+        # Reflection formula for point (x,y) about line y = mx + c
+        # x' = ((1 - m^2)x + 2m(y - c))/(1 + m^2)
+        # y' = (2mx - (1 - m^2)y + 2c)/(1 + m^2)
+        denom = 1 + m_reflect * m_reflect
+        x_reflect = ((1 - m_reflect * m_reflect) * p.x + 2 * m_reflect * (p.y - c_reflect)) / denom
+        y_reflect = (2 * m_reflect * p.x - (1 - m_reflect * m_reflect) * p.y + 2 * c_reflect) / denom
+        
+        return Point(x=x_reflect, y=y_reflect, z=p.z)
 
 
 def reflectXY(p: Point, p1_reflect: Point, p2_reflect: Point) -> Point:
     '''Reflects a point about a line defined by two points.'''
-    if p2_reflect.x - p1_reflect.x == 0:  # Vertical line
+    # Handle special cases first for better numerical stability
+    if abs(p2_reflect.x - p1_reflect.x) < 1e-10:  # Vertical line
         x_reflect = 2 * p1_reflect.x - p.x
         return Point(x=x_reflect, y=p.y, z=p.z)
-    elif p2_reflect.y - p1_reflect.y == 0:  # Horizontal line
+    elif abs(p2_reflect.y - p1_reflect.y) < 1e-10:  # Horizontal line
         y_reflect = 2 * p1_reflect.y - p.y
         return Point(x=p.x, y=y_reflect, z=p.z)
     else:
@@ -56,5 +59,9 @@ def reflectXY_points(points, line_point1, line_point2):
     Returns:
         Reflected points
     """
-    return [reflectXY(p, line_point1, line_point2) for p in points]
-    pass
+    # Handle both individual points and lists of points
+    if hasattr(points, '__iter__') and not isinstance(points, Point):
+        return [reflectXY(p, line_point1, line_point2) for p in points]
+    else:
+        # Handle a single point
+        return reflectXY(points, line_point1, line_point2)

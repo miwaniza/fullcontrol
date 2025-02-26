@@ -39,24 +39,37 @@ def test_gcode_controls_save_as():
 
 def test_gcode_controls_custom_start_end():
     """Test custom start and end G-code"""
+    custom_start = "G28 ; Custom home\nG1 Z10 ; Raise Z"
+    custom_end = "M104 S0 ; Turn off hotend"
     controls = GcodeControls(
         printer_name="generic",
         initialization_data={
-            "start_gcode": "G28 ; Custom home\nG1 Z10 ; Raise Z",
-            "end_gcode": "M104 S0 ; Turn off hotend",
+            "start_gcode": custom_start,
+            "end_gcode": custom_end,
             "print_speed": 1000,
             "travel_speed": 2000,
             "extrusion_width": 0.4,
             "extrusion_height": 0.2
         }
     )
-    steps = [Point(x=0, y=0, z=0, e=0)]
+    steps = [Point(x=10, y=10, z=0, e=1)]  # Add a simple movement
     result = gcode(steps, controls, show_tips=False)
     
     result_lines = result.splitlines()
-    assert any("G28 ; Custom home" in line for line in result_lines)
-    assert any("G1 Z10 ; Raise Z" in line for line in result_lines)
-    assert any("M104 S0 ; Turn off hotend" in line for line in result_lines)
+    
+    # Check start G-code appears at the beginning
+    assert result_lines[0] == "G28 ; Custom home"
+    assert result_lines[1] == "G1 Z10 ; Raise Z"
+    
+    # Check end G-code appears at the end
+    assert result_lines[-1] == "M104 S0 ; Turn off hotend"
+    
+    # Verify the actual movement command is between start and end
+    movement_lines = [line for line in result_lines if "G1 X10" in line]
+    assert len(movement_lines) > 0
+    movement_index = result_lines.index(movement_lines[0])
+    assert movement_index > 1  # After start G-code
+    assert movement_index < len(result_lines) - 1  # Before end G-code
 
 def test_gcode_controls_speed_override():
     """Test speed settings override through controls"""
@@ -100,7 +113,8 @@ def test_gcode_controls_inheritance():
         initialization_data={**base_controls.initialization_data, **override_data}
     )
     
-    steps = [Point(x=0, y=0, z=0)]
+    # Use a Point with e=1 to ensure it uses print_speed instead of travel_speed
+    steps = [Point(x=0, y=0, z=0, e=1)]
     result = gcode(steps, derived_controls, show_tips=False)
     
-    assert "F1500" in result  # Should use the overridden speed
+    assert "F1500" in result  # Should use the overridden print speed

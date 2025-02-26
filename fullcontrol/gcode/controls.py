@@ -24,14 +24,26 @@ class GcodeControls(BaseModel):
     def get_printer_config(self) -> Dict[str, Any]:
         """Get the base printer configuration."""
         if self.printer_name == 'generic':
+            # Return default generic config with basic settings
             return {
                 'start_gcode': '',
                 'end_gcode': '',
+                # Default speeds, will be overwritten by initialization_data if provided
                 'print_speed': 8000,
                 'travel_speed': 8000,
                 'retraction': 0,
                 'z_hop': 0,
-                'relative_extrusion': True
+                'relative_extrusion': True,
+                'extrusion_width': 0.4,
+                'extrusion_height': 0.2,
+                'e_units': 'mm',
+                'dia_feed': 1.75,
+                'manual_e_ratio': None,
+                'printer_command_list': {},
+                'area_model': 'rectangular',
+                'primer': 'no_primer',
+                'starting_procedure_steps': [],
+                'ending_procedure_steps': []
             }
         
         try:
@@ -64,4 +76,17 @@ class GcodeControls(BaseModel):
                   "the printer with proper start gcode\n   - use fc.transform(..., "
                   "controls=fc.GcodeControls(printer_name='generic') to disable this message or set "
                   "it to a real printer name\n")
-
+        
+        # Get the base printer configuration
+        base_config = self.get_printer_config()
+        
+        # Handle initialization_data properly
+        if not self.initialization_data:
+            # If no initialization_data provided, use the base config
+            self.initialization_data = base_config.copy()
+        else:
+            # Make a copy of the base config and update it with user-provided values
+            # This ensures all base keys exist even if not explicitly provided by the user
+            merged_config = base_config.copy()
+            merged_config.update(self.initialization_data)
+            self.initialization_data = merged_config

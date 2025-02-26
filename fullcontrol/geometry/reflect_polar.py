@@ -1,5 +1,6 @@
 from fullcontrol.geometry import Point, polar_to_point
-from fullcontrol.geometry.reflect import reflectXY_points
+from fullcontrol.geometry.reflect import reflectXY
+from math import cos, sin, sqrt
 
 def reflectXYpolar(p: Point, p_reflect: Point, angle_reflect: float) -> Point:
     '''
@@ -13,6 +14,12 @@ def reflectXYpolar(p: Point, p_reflect: Point, angle_reflect: float) -> Point:
     Returns:
         Point: The new point with the original z value.
     '''
-    # Create second point on reflection line using polar coordinates
-    p2_reflect = polar_to_point(p_reflect, 1, angle_reflect)
-    return reflectXY_points(p, p_reflect, p2_reflect)
+    # Create a second point on the reflection line
+    # Use exact unit vector components to ensure precise reflection angle
+    p2_reflect = Point(
+        x=p_reflect.x + round(cos(angle_reflect), 10),  # Round to handle floating point precision
+        y=p_reflect.y + round(sin(angle_reflect), 10),
+        z=p_reflect.z
+    )
+    
+    return reflectXY(p, p_reflect, p2_reflect)

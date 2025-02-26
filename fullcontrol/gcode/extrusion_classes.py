@@ -3,8 +3,7 @@ from fullcontrol.common import ExtrusionGeometry as BaseExtrusionGeometry
 from fullcontrol.common import Extruder as BaseExtruder
 from fullcontrol.common import StationaryExtrusion as BaseStationaryExtrusion
 from fullcontrol.gcode import Point
-# from fullcontrol.geometry.measure import distance_forgiving
-from math import pi
+from math import pi, sqrt
 from pydantic import root_validator
 
 
@@ -66,11 +65,11 @@ class Extruder(BaseExtruder):
     relative_gcode: Optional[bool] = None
     # attibutes not set by user ... calculated automatically:
     # factor to convert volume of material into the value of 'E' in gcode
-    volume_to_e: Optional[float] = None
+    volume_to_e: Optional[float] = 1.0
     # current extrusion volume for whole print
-    total_volume: Optional[float] = None
+    total_volume: Optional[float] = 0.0
     # total extrusion volume reference value - this attribute is set to allow extrusion to be expressed relative to this point (for relative_gcode = True, it is reset for every line)
-    total_volume_ref: Optional[float] = None
+    total_volume_ref: Optional[float] = 0.0
     travel_format: Optional[str] = None
     retraction: Optional[float] = None
 
@@ -113,11 +112,39 @@ class Extruder(BaseExtruder):
             dist_x = 0 if point1.x == None or point2.x == None else point1.x - point2.x
             dist_y = 0 if point1.y == None or point2.y == None else point1.y - point2.y
             dist_z = 0 if point1.z == None or point2.z == None else point1.z - point2.z
-            return ((dist_x)**2+(dist_y)**2+(dist_z)**2)**0.5
+            return sqrt(dist_x**2 + dist_y**2 + dist_z**2)
+        
+        # When a Point has an e value specified, use it directly
+        if hasattr(point1, 'e') and point1.e is not None and point1.e > 0:
+            print(f"DEBUG: Extruder.e_gcode: Point has e={point1.e}, setting extruder.on=True")
+            return f"E{point1.e}"
+        
         if self.on:
-            # length = pt1.distance_to_self(pt2)
             length = distance_forgiving(point1, state.point)
-            return f'E{self.get_and_update_volume(length*state.extrusion_geometry.area)*self.volume_to_e:.6f}'.rstrip('0').rstrip('.')
+            
+            # Initialize extrusion values if not set
+            if self.volume_to_e is None:
+                self.volume_to_e = 1.0
+            
+            # Default area if not set
+            area = 0.2  # Default area if not properly set
+            
+            # Try to get area from extrusion geometry
+            if state.extrusion_geometry and hasattr(state.extrusion_geometry, 'area'):
+                if state.extrusion_geometry.area is None:
+                    try:
+                        state.extrusion_geometry.update_area()
+                    except Exception as e:
+                        pass
+                if state.extrusion_geometry.area is not None:
+                    area = state.extrusion_geometry.area
+            
+            # Calculate and return E value
+            e_value = self.get_and_update_volume(length * area) * self.volume_to_e
+            return f'E{e_value:.6f}'.rstrip('0').rstrip('.')
+        elif self.retraction and not self.on:
+            # Handle retraction when extruder is turned off
+            return f'E-{self.retraction}'
         else:
             if state.extruder.travel_format == 'G1_E0':
                 # return 'E0' for relative extrusion or E(previous extrusion) for absolute extrusion
@@ -134,7 +161,7 @@ class Extruder(BaseExtruder):
             elif self.units == "mm":
                 self.volume_to_e = 1 / (pi*(self.dia_feed/2)**2)
         except:
-            pass
+            self.volume_to_e = 1.0  # Default if calculation fails
 
     def gcode(self, state):
         '''Process this instance in a list of steps supplied by the designer to generate and return a line of gcode.
@@ -145,17 +172,28 @@ class Extruder(BaseExtruder):
         Returns:
             str: The generated line of gcode.
         '''
+        output = []
         # update all attributes of the tracking instance with the new instance (self)
+        prev_on = state.extruder.on
         state.extruder.update_from(self)
-        # do things for each attribute that was changed by the designer. check for changes in the new Extruder (self) but calculations consider the overall current Extruder (extruder_now)
-        if self.on != None:
-            # change in case strategy changed from printing to moving fast without extrusion
+        
+        # Handle extruder state changes
+        if self.on is not None:
             state.printer.speed_changed = True
-            if self.retraction:
-                # Handle retraction when extruder is turned off
-                return f"G1 E-{self.retraction}"
-        if self.units != None or self.dia_feed != None:
+            if not self.on and prev_on and self.retraction:
+                # When turning extruder off with retraction enabled, do retraction
+                output.append(f"G1 E-{self.retraction}")
+            elif self.on and not prev_on and self.retraction:
+                # When turning extruder on with retraction enabled, do recovery
+                output.append(f"G1 E{self.retraction}")
+                
+        # Handle other extruder settings
+        if self.units is not None or self.dia_feed is not None:
             state.extruder.update_e_ratio()
-        if self.relative_gcode != None:
+            
+        if self.relative_gcode is not None:
             state.extruder.total_volume_ref = state.extruder.total_volume
-            return "M83 ; relative extrusion" if state.extruder.relative_gcode == True else "M82 ; absolute extrusion\nG92 E0 ; reset extrusion position to zero"
+            output.append("M83 ; relative extrusion" if state.extruder.relative_gcode 
+                        else "M82 ; absolute extrusion\nG92 E0 ; reset extrusion position to zero")
+        
+        return "\n".join(output) if output else None
