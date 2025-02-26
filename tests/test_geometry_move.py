@@ -1,6 +1,6 @@
 import pytest
 from fullcontrol.geometry.move import move, move_geometry, copy_geometry
-from fullcontrol.point import Point
+from fullcontrol.combinations.gcode_and_visualize.classes import Point
 from fullcontrol.geometry import Vector
 
 

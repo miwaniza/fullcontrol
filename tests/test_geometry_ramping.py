@@ -1,7 +1,7 @@
 import pytest
 import math
 from fullcontrol.geometry.ramping import ramp_xyz, ramp_polar
-from fullcontrol.point import Point
+from fullcontrol.combinations.gcode_and_visualize.classes import Point
 from fullcontrol.geometry import Vector
 
 
