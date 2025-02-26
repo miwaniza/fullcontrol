@@ -22,3 +22,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved tips system to show specific messages for missing extrusion width/height parameters
 - Fixed State initialization test to properly check for input steps in state.steps sequence
 - Fixed bug in travel_to.py for proper error message with invalid inputs
+- Fixed Point class inconsistency in geometry test suite to use correct implementation
