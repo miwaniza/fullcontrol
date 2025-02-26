@@ -236,7 +236,7 @@ def segmented_path(points: list, segments: int) -> list:
     result = []
     
     # Start with the first point
-    result.append(points[0].copy())
+    result.append(points[0].model_copy())
     
     # For each intermediate point
     for i in range(1, segments):
@@ -253,11 +253,11 @@ def segmented_path(points: list, segments: int) -> list:
                     result.append(new_point)
                     break
                 else:
-                    result.append(points[j].copy())
+                    result.append(points[j].model_copy())
                     break
     
     # End with the last point
-    result.append(points[-1].copy())
+    result.append(points[-1].model_copy())
     
     return result
 

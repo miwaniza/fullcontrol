@@ -23,3 +23,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed State initialization test to properly check for input steps in state.steps sequence
 - Fixed bug in travel_to.py for proper error message with invalid inputs
 - Fixed Point class inconsistency in geometry test suite to use correct implementation
+- Fixed deprecated Pydantic copy() usage, replaced with model_copy()
+- Renamed TestModel class to avoid pytest collection warnings

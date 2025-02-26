@@ -29,7 +29,7 @@ def rectangleXY(start_point: Point, x_size: float, y_size: float, cw: bool = Fal
         point1 = Point(x=start_point.x, y=start_point.y + y_size, z=start_point.z)
         point2 = Point(x=start_point.x + x_size, y=start_point.y + y_size, z=start_point.z)
         point3 = Point(x=start_point.x + x_size, y=start_point.y, z=start_point.z)
-    return [start_point.copy(), point1, point2, point3, start_point.copy()]
+    return [start_point.model_copy(), point1, point2, point3, start_point.model_copy()]
 
 
 def circleXY(centre: Point, radius: float, start_angle: float, segments: int = 100, cw: bool = False) -> list:
