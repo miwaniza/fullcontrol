@@ -20,5 +20,5 @@ def travel_to(geometry: Union[Point, list]) -> list:
     elif isinstance(geometry, list):
         point = first_point(geometry)
     else:
-        raise Exception(f'an object of type "{type(point).__name__}" was supplied. a Point object or list of points must be supplied')
+        raise Exception(f'an object of type "{type(geometry).__name__}" was supplied. a Point object or list of points must be supplied')
     return [Extruder(on=False), point, Extruder(on=True)]
