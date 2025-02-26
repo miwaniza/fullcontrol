@@ -1,0 +1,12 @@
+modules = []
+interfaces = []
+exclude = [
+    "**/*__pycache__",
+    "**/*egg-info",
+    "**/docs",
+    "**/tests",
+    "**/venv",
+]
+source_roots = [
+    ".", "fullcontrol",
+]

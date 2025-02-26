@@ -1,17 +1,14 @@
-
 # import classes
 from fullcontrol.combinations.gcode_and_visualize.classes import Point, Extruder
-# objects are imported here with functionality for both gcode and visualization. this means
-# the modules within the geometry subpackage can simply import from here, with the idea being
-# that only one import command needs to be changed if a different combination of properties is
-# used (i.e. this bit in the line above: fullcontrol.combinations.gcode_and_visualize.classes).
 from fullcontrol.geometry.vector import Vector
 from fullcontrol.geometry.polar import PolarPoint
+
+# import vector operations first to avoid circular imports
+from fullcontrol.geometry.rotate import rotate_vector, normalize_vector
 
 # import functions
 from fullcontrol.geometry.polar import point_to_polar, polar_to_point, polar_to_vector
 from fullcontrol.geometry.midpoint import midpoint, interpolated_point
-# , distance_forgiving
 from fullcontrol.geometry.measure import distance, angleXY_between_3_points, path_length
 from fullcontrol.geometry.move import move
 from fullcontrol.geometry.move_polar import move_polar

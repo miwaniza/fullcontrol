@@ -1,92 +1,79 @@
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, field_validator, model_validator
-from importlib import import_module
+from fullcontrol.gcode.printer import Printer
+from typing import Optional, Dict, Any, Union
+import json
+import os
 
-
-class GcodeControls(BaseModel):
-    """Control settings for G-code generation."""
-    printer_name: str = "generic"
-    initialization_data: Dict[str, Any] = {}
-    save_as: Optional[str] = None
-    include_date: bool = True
-
-    @field_validator('printer_name')
-    def validate_printer_name(cls, v: str) -> str:
-        """Validate printer name exists and load its configuration."""
-        if v != 'generic':
-            try:
-                printer_path = v.replace('/', '.').lower()
-                import_module(f'fullcontrol.devices.community.{printer_path}')
-            except ImportError:
-                raise ValueError(f"Printer '{v}' is not supported. Make sure the printer configuration exists.")
-        return v
-
-    def get_printer_config(self) -> Dict[str, Any]:
-        """Get the base printer configuration."""
-        if self.printer_name == 'generic':
-            # Return default generic config with basic settings
-            return {
-                'start_gcode': '',
-                'end_gcode': '',
-                # Default speeds, will be overwritten by initialization_data if provided
-                'print_speed': 8000,
-                'travel_speed': 8000,
-                'retraction': 0,
-                'z_hop': 0,
-                'relative_extrusion': True,
-                'extrusion_width': 0.4,
-                'extrusion_height': 0.2,
-                'e_units': 'mm',
-                'dia_feed': 1.75,
-                'manual_e_ratio': None,
-                'printer_command_list': {},
-                'area_model': 'rectangular',
-                'primer': 'no_primer',
-                'starting_procedure_steps': [],
-                'ending_procedure_steps': []
-            }
+class GcodeControls:
+    '''Class to control gcode generation.'''
+    def __init__(self, printer_name: str = None, initialization_data: Dict[str, Any] = None, save_as: str = None, include_date: bool = True):
+        self.printer_name = printer_name or 'generic'
+        self.initialization_data = initialization_data or {}
+        self.save_as = save_as
+        self.include_date = include_date
         
-        try:
-            printer_path = self.printer_name.replace('/', '.').lower()
-            printer_module = import_module(f'fullcontrol.devices.community.{printer_path}')
-            return getattr(printer_module, 'CONFIG', {})
-        except (ImportError, AttributeError):
-            return {}
+        # Check for invalid printer name right away
+        if printer_name and printer_name != 'generic':
+            printer_path = os.path.join('printers', f'{printer_name}.json')
+            if not os.path.exists(printer_path):
+                raise ValueError(f"printer_name '{printer_name}' is invalid - printer configuration not found")
+            
+        # Never override user-provided values with defaults
+        defaults = {
+            'print_speed': 1000,
+            'travel_speed': 2000,
+            'extrusion_width': 0.4,
+            'extrusion_height': 0.2,
+            'relative_extrusion': True,
+            'e_units': 'mm',
+            'dia_feed': 1.75
+        }
+        
+        # Only apply defaults for missing values
+        for key, value in defaults.items():
+            if key not in self.initialization_data:
+                self.initialization_data[key] = value
+            
+        # Store custom G-code if provided
+        self._custom_start_gcode = self.initialization_data.pop('start_gcode', None)
+        self._custom_end_gcode = self.initialization_data.pop('end_gcode', None)
+
+    def get_start_gcode(self) -> Optional[str]:
+        """Get the start G-code sequence."""
+        return self._custom_start_gcode
+
+    def get_end_gcode(self) -> Optional[str]:
+        """Get the end G-code sequence."""
+        return self._custom_end_gcode
 
     def get_config(self, key: str, default: Any = None) -> Any:
-        """Get a configuration value, with initialization_data overriding printer defaults."""
-        # Get base config first
-        base_config = self.get_printer_config()
-        # Override with initialization data
-        config = {**base_config, **self.initialization_data}
-        return config.get(key, default)
+        """Get a configuration value with fallback to default."""
+        return self.initialization_data.get(key, default)
 
-    def get_start_gcode(self) -> str:
-        """Get the start G-code sequence."""
-        return self.get_config('start_gcode', '')
+    def set_save_as(self, filename: str, include_date: bool = True):
+        """Configure G-code file saving options."""
+        self.save_as = filename
+        self.include_date = include_date
 
-    def get_end_gcode(self) -> str:
-        """Get the end G-code sequence."""
-        return self.get_config('end_gcode', '')
-
-    def initialize(self) -> None:
-        """Initialize printer configuration and show warnings if needed."""
-        if self.printer_name == 'generic':
-            print("warning: printer is not set - defaulting to 'generic', which does not initialize "
-                  "the printer with proper start gcode\n   - use fc.transform(..., "
-                  "controls=fc.GcodeControls(printer_name='generic') to disable this message or set "
-                  "it to a real printer name\n")
+    def initialize(self):
+        """Post-initialization setup, mainly for handling late-bound settings."""
+        # Re-check printer name
+        if self.printer_name and self.printer_name != 'generic':
+            printer_path = os.path.join('printers', f'{self.printer_name}.json')
+            if not os.path.exists(printer_path):
+                raise ValueError(f"Invalid printer_name '{self.printer_name}' - printer configuration not found")
         
-        # Get the base printer configuration
-        base_config = self.get_printer_config()
+        # Re-check default values after any post-init changes
+        defaults = {
+            'print_speed': 1000,
+            'travel_speed': 2000,
+            'extrusion_width': 0.4,
+            'extrusion_height': 0.2,
+            'relative_extrusion': True,
+            'e_units': 'mm',
+            'dia_feed': 1.75
+        }
         
-        # Handle initialization_data properly
-        if not self.initialization_data:
-            # If no initialization_data provided, use the base config
-            self.initialization_data = base_config.copy()
-        else:
-            # Make a copy of the base config and update it with user-provided values
-            # This ensures all base keys exist even if not explicitly provided by the user
-            merged_config = base_config.copy()
-            merged_config.update(self.initialization_data)
-            self.initialization_data = merged_config
+        # Only apply defaults for missing values
+        for key, value in defaults.items():
+            if key not in self.initialization_data:
+                self.initialization_data[key] = value

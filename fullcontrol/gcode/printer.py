@@ -1,68 +1,85 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from fullcontrol.common import Printer as BasePrinter
+
+class PrinterCommand:
+    """Base class for printer commands that can be converted to G-code."""
+    def __init__(self, command: Dict[str, Any] = None):
+        self.command = command or {}
+        
+    def gcode(self, state) -> Optional[str]:
+        """Convert the command to G-code."""
+        return None
 
 class Printer(BasePrinter):
     '''
-    Extend generic class with gcode methods and attributes to convert the object to gcode
-
-    Additional Attributes:
-        command_list (Optional[dict]): A dictionary containing the printer's command list.
-        new_command (Optional[dict]): A dictionary containing a new command to be added to the command list.
-        speed_changed (Optional[bool]): A flag indicating whether the print speed or travel speed has changed.
+    Extend generic class with gcode methods and attributes to convert the object to gcode.
     '''
     command_list: Optional[dict] = None
     new_command: Optional[dict] = None
-    speed_changed: Optional[bool] = True  # Set to True by default to ensure speeds are always included initially
-
-    def f_gcode(self, state):
-        """
-        Generate the G-code for the feedrate (F) based on the current state.
-
-        Parameters:
-        - state: The current state of the printer.
-
-        Returns:
-        - The G-code string for the feedrate (F) based on the current state.
-        """
-        current_speed = self.print_speed if state.extruder.on else self.travel_speed
-        return f'F{current_speed}' + ' '
-
-    def gcode(self, state):
-        '''
-        Process this instance in a list of steps supplied by the designer to generate and return a line of gcode.
-
-        Args:
-            state: The state object containing information about the printer's current state.
-
-        Returns:
-            A line of gcode generated based on the supplied steps.
-        '''
-        # Update all attributes of the tracking instance with the new instance (self)
-        # and generate a G-code comment to document the change
-        comment_lines = []
+    print_speed: Optional[float] = None
+    travel_speed: Optional[float] = None
+    last_used_speed: Optional[float] = None
+    
+    def update_speed(self, state) -> Optional[str]:
+        """Update and track speed changes."""
+        if not state:
+            return None
+            
+        speed = None
+        is_extrusion = state.extruder and state.extruder.on
+        if is_extrusion:
+            speed = self.print_speed
+        else:
+            speed = self.travel_speed
+            
+        # Only emit speed command if it has changed
+        if speed is not None and speed != state.printer.last_used_speed:
+            state.printer.last_used_speed = speed
+            return f"G1 F{int(speed)} ; Set {'print' if is_extrusion else 'travel'} speed"
+        return None
+    
+    def update_from(self, other):
+        """Update this printer's attributes from another printer instance."""
+        super().update_from(other)
+        if other.print_speed is not None:
+            self.print_speed = other.print_speed
+            # Reset last_used_speed to force speed update
+            self.last_used_speed = None
+        if other.travel_speed is not None:
+            self.travel_speed = other.travel_speed
+            # Reset last_used_speed to force speed update
+            self.last_used_speed = None
+        if other.new_command is not None:
+            self.new_command = other.new_command.copy() if other.new_command else None
+        if other.command_list is not None:
+            if self.command_list is None:
+                self.command_list = {}
+            self.command_list.update(other.command_list)
         
-        # Handle print_speed
-        if self.print_speed is not None:
-            old_speed = state.printer.print_speed
-            state.printer.print_speed = self.print_speed
-            print(f"DEBUG Printer.gcode: Updated print_speed from {old_speed} to {self.print_speed}")
-            comment_lines.append(f"; Set print_speed to {self.print_speed}")
+    def gcode(self, state) -> Optional[str]:
+        """Generate G-code for printer settings changes."""
+        if not state:
+            return None
             
-        # Handle travel_speed
-        if self.travel_speed is not None:
-            old_speed = state.printer.travel_speed
-            state.printer.travel_speed = self.travel_speed
-            print(f"DEBUG Printer.gcode: Updated travel_speed from {old_speed} to {self.travel_speed}")
-            comment_lines.append(f"; Set travel_speed to {self.travel_speed}")
+        commands = []
+        
+        # Process speed changes with actual G-code
+        speed_cmd = self.update_speed(state)
+        if speed_cmd:
+            commands.append(speed_cmd)
             
-        # Handle command list
-        if self.new_command is not None:
+        # Process custom commands
+        if self.new_command:
             if state.printer.command_list is None:
                 state.printer.command_list = {}
-            state.printer.command_list = {**state.printer.command_list, **self.new_command}
-            comment_lines.append("; Updated printer command list")
+            state.printer.command_list.update(self.new_command)
+            for cmd, value in self.new_command.items():
+                if isinstance(value, str):
+                    commands.append(value)
+                else:
+                    commands.append(f"; Custom command: {cmd}={value}")
+                
+        # Update state's printer settings
+        state.printer.update_from(self)
             
-        # Return a comment line if any changes were made - this helps document the changes in the G-code output
-        if comment_lines:
-            return "\n".join(comment_lines)
-        return None
+        return '\n'.join(commands) if commands else None

@@ -1,0 +1,99 @@
+STDOUT:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-8.3.4, pluggy-1.5.0 -- C:\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: c:\github\fullcontrol
+configfile: pytest.ini
+plugins: anyio-4.8.0, cov-6.0.0
+collecting ... collected 8 items
+
+tests/test_gcode_controls.py::test_gcode_controls_initialization PASSED  [ 12%]
+tests/test_gcode_controls.py::test_gcode_controls_with_initialization_data PASSED [ 25%]
+tests/test_gcode_controls.py::test_gcode_controls_printer_validation PASSED [ 37%]
+tests/test_gcode_controls.py::test_gcode_controls_save_as PASSED         [ 50%]
+tests/test_gcode_controls.py::test_gcode_controls_custom_start_end FAILED [ 62%]
+tests/test_gcode_controls.py::test_gcode_controls_speed_override FAILED  [ 75%]
+tests/test_gcode_controls.py::test_gcode_controls_post_initialization PASSED [ 87%]
+tests/test_gcode_controls.py::test_gcode_controls_inheritance PASSED     [100%]
+
+================================== FAILURES ===================================
+____________________ test_gcode_controls_custom_start_end _____________________
+
+    def test_gcode_controls_custom_start_end():
+        """Test custom start and end G-code"""
+        custom_start = "G28 ; Custom home\nG1 Z10 ; Raise Z"
+        custom_end = "M104 S0 ; Turn off hotend"
+        controls = GcodeControls(
+            printer_name="generic",
+            initialization_data={
+                "start_gcode": custom_start,
+                "end_gcode": custom_end,
+                "print_speed": 1000,
+                "travel_speed": 2000,
+                "extrusion_width": 0.4,
+                "extrusion_height": 0.2
+            }
+        )
+        steps = [Point(x=10, y=10, z=0, e=1)]  # Add a simple movement
+        result = gcode(steps, controls, show_tips=False)
+    
+        result_lines = result.splitlines()
+    
+        # Check start G-code appears at the beginning
+        assert result_lines[0] == "G28 ; Custom home"
+        assert result_lines[1] == "G1 Z10 ; Raise Z"
+    
+        # Check end G-code appears at the end
+        assert result_lines[-1] == "M104 S0 ; Turn off hotend"
+    
+        # Verify the actual movement command is between start and end
+        movement_lines = [line for line in result_lines if "G1 X10" in line]
+>       assert len(movement_lines) > 0
+E       assert 0 > 0
+E        +  where 0 = len([])
+
+tests\test_gcode_controls.py:69: AssertionError
+---------------------------- Captured stdout call -----------------------------
+warning: printer is not set - defaulting to 'generic', which does not initialize the printer with proper start gcode
+   - use fc.transform(..., controls=fc.GcodeControls(printer_name='generic') to disable this message or set it to a real printer name
+
+warning: printer is not set - defaulting to 'generic', which does not initialize the printer with proper start gcode
+   - use fc.transform(..., controls=fc.GcodeControls(printer_name='generic') to disable this message or set it to a real printer name
+
+tip: Using generic printer configuration - specify a real printer for proper initialization
+_____________________ test_gcode_controls_speed_override ______________________
+
+    def test_gcode_controls_speed_override():
+        """Test speed settings override through controls"""
+        controls = GcodeControls(
+            printer_name="generic",
+            initialization_data={"print_speed": 1000}
+        )
+        steps = [
+            Point(x=0, y=0, z=0),
+            Printer(print_speed=2000),  # Should override the initialization speed
+            Point(x=10, y=0, z=0)
+        ]
+        result = gcode(steps, controls, show_tips=False)
+    
+>       assert "F2000" in result  # Should use the overridden speed
+E       AssertionError: assert 'F2000' in 'G0 F8000.0 X0 Y0 Z0\n; Set print_speed=2000.0\nG0 F8000.0 X10'
+
+tests\test_gcode_controls.py:87: AssertionError
+---------------------------- Captured stdout call -----------------------------
+warning: printer is not set - defaulting to 'generic', which does not initialize the printer with proper start gcode
+   - use fc.transform(..., controls=fc.GcodeControls(printer_name='generic') to disable this message or set it to a real printer name
+
+warning: printer is not set - defaulting to 'generic', which does not initialize the printer with proper start gcode
+   - use fc.transform(..., controls=fc.GcodeControls(printer_name='generic') to disable this message or set it to a real printer name
+
+tip: Using generic printer configuration - specify a real printer for proper initialization
+tip: No start G-code configured - add start_gcode to initialization_data for proper printer setup
+tip: No end G-code configured - add end_gcode to initialization_data for proper printer shutdown
+=========================== short test summary info ===========================
+FAILED tests/test_gcode_controls.py::test_gcode_controls_custom_start_end - a...
+FAILED tests/test_gcode_controls.py::test_gcode_controls_speed_override - Ass...
+========================= 2 failed, 6 passed in 0.58s =========================
+
+
+STDERR:

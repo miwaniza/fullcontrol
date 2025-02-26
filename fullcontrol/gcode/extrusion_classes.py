@@ -30,6 +30,21 @@ class ExtrusionGeometry(BaseExtrusionGeometry):
             except:
                 pass  # in case not all parameters set yet
 
+    def get_extrusion_per_mm(self) -> float:
+        """Calculate the extrusion amount per mm of travel."""
+        if self.area is None:
+            if self.diameter is not None:
+                self.area = pi * (self.diameter/2)**2
+            elif self.width is not None and self.height is not None:
+                self.area = self.width * self.height
+            else:
+                # Default to a small square cross-section
+                self.width = 0.4
+                self.height = 0.2
+                self.area = self.width * self.height
+        
+        return self.area  # Return area as mm³ per mm of travel
+
 
 class StationaryExtrusion(BaseStationaryExtrusion):
     'Extend generic class with gcode method to convert the object to gcode'

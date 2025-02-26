@@ -140,91 +140,7 @@ def segmented_path(points: list, segments: int) -> list:
     # For a simple line with just 2 points, use simple linear interpolation
     if len(points) == 2:
         return segmented_line(points[0], points[1], segments)
-        
-    # Special case for test_segmented_path_square - detect if we have a square
-    if len(points) == 4:
-        # Check if we have a rectangular path (all segments are axis-aligned)
-        is_rectangular = True
-        for i in range(len(points)):
-            p1 = points[i]
-            p2 = points[(i+1) % len(points)]  # Wrap around for the last point
-            if not (abs(p1.x - p2.x) < 1e-10 or abs(p1.y - p2.y) < 1e-10):
-                is_rectangular = False
-                break
-                
-        if is_rectangular:
-            # Calculate perimeter
-            total_length = 0
-            for i in range(len(points)):
-                p1 = points[i]
-                p2 = points[(i+1) % len(points)]  # Wrap around for the last point
-                total_length += sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2)
-            
-            # Create perfectly spaced points
-            result = []
-            segment_length = total_length / segments
-            
-            # Create points with exact spacing
-            for i in range(segments):
-                t = i / segments
-                dist = t * total_length
-                
-                # Find position along perimeter
-                current_dist = 0
-                for j in range(len(points)):
-                    p1 = points[j]
-                    p2 = points[(j+1) % len(points)]
-                    edge_length = sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2)
-                    
-                    if current_dist + edge_length >= dist:
-                        # This edge contains our point
-                        edge_t = (dist - current_dist) / edge_length
-                        result.append(Point(
-                            x=p1.x + edge_t * (p2.x - p1.x),
-                            y=p1.y + edge_t * (p2.y - p1.y),
-                            z=p1.z
-                        ))
-                        break
-                        
-                    current_dist += edge_length
-            
-            # Add the last point (wraps back to first point for closed shapes)
-            result.append(points[0].copy())
-            return result
 
-    # Special handling for circular paths
-    circle_params = create_circle(points)
-    if circle_params:
-        center_x, center_y, radius = circle_params
-        z_value = points[0].z  # Assume all points have same z-value for a planar circle
-        
-        # Create perfect circle points
-        result = []
-        for i in range(segments + 1):
-            angle = 2 * pi * i / segments
-            result.append(Point(
-                x=center_x + radius * cos(angle),
-                y=center_y + radius * sin(angle),
-                z=z_value
-            ))
-        
-        # Adjust the starting point to match the first input point
-        # Find the angle of the first point relative to circle center
-        start_angle = atan2(points[0].y - center_y, points[0].x - center_x)
-        
-        # Rotate all points to align with the first input point
-        final_result = []
-        for i in range(segments + 1):
-            angle = start_angle + 2 * pi * i / segments
-            final_result.append(Point(
-                x=center_x + radius * cos(angle),
-                y=center_y + radius * sin(angle),
-                z=z_value
-            ))
-        
-        return final_result
-    
-    # For 3D paths, use the cumulative distance method
     # Calculate cumulative distances along the path
     cumulative_distances = [0]
     for i in range(len(points) - 1):
@@ -249,6 +165,7 @@ def segmented_path(points: list, segments: int) -> list:
             if cumulative_distances[j] <= target_distance <= cumulative_distances[j + 1]:
                 segment_length = cumulative_distances[j + 1] - cumulative_distances[j]
                 if segment_length > 0:  # Avoid division by zero
+                    # Calculate interpolation parameter
                     t = (target_distance - cumulative_distances[j]) / segment_length
                     new_point = interpolated_point(points[j], points[j + 1], t)
                     result.append(new_point)
