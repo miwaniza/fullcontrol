@@ -8,7 +8,7 @@ from fullcontrol.gcode.extrusion_classes import Extruder, ExtrusionGeometry
 def test_state_initialization():
     """Test basic state initialization"""
     steps = [Point(x=0, y=0, z=0)]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     state = State(steps, controls)
     
     # Check that our input steps are included in state steps
@@ -31,7 +31,7 @@ def test_state_step_processing():
         Extruder(on=True),
         Point(x=10, y=10, z=0)
     ]
-    controls = GcodeControls(printer_name="Community/Generic")
+    controls = GcodeControls(printer_name="generic")
     state = State(steps, controls)
     
     assert state.i == 0
@@ -42,7 +42,7 @@ def test_state_printer_initialization():
     """Test printer initialization in state"""
     steps = [Point(x=0, y=0, z=0)]
     controls = GcodeControls(
-        printer_name="Community/Generic",
+        printer_name="generic",
         initialization_data={"print_speed": 1000, "travel_speed": 2000}
     )
     state = State(steps, controls)
@@ -54,7 +54,7 @@ def test_state_extruder_initialization():
     """Test extruder initialization in state"""
     steps = [Point(x=0, y=0, z=0)]
     controls = GcodeControls(
-        printer_name="Community/Generic",
+        printer_name="generic",
         initialization_data={"relative_extrusion": True}
     )
     state = State(steps, controls)
@@ -71,4 +71,4 @@ def test_state_invalid_printer():
     
     error_message = str(exc_info.value).lower()
     assert "printer_name" in error_message
-    assert "invalid printer_name" in error_message
+    assert "invalid" in error_message

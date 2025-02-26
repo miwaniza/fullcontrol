@@ -6,31 +6,54 @@ from math import sqrt, cos, sin, radians
 
 
 def dot_product(v1, v2):
-    return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z
+    """Calculate dot product between two vectors, treating None components as 0."""
+    result = 0
+    if v1.x is not None and v2.x is not None:
+        result += v1.x * v2.x
+    if v1.y is not None and v2.y is not None:
+        result += v1.y * v2.y
+    if v1.z is not None and v2.z is not None:
+        result += v1.z * v2.z
+    return result
 
 
 def cross_product(v1, v2):
-    return Point(x=v1.y*v2.z - v1.z*v2.y, y=v1.z*v2.x - v1.x*v2.z, z=v1.x*v2.y - v1.y*v2.x)
+    """Calculate cross product between two vectors, treating None components as 0."""
+    x1, y1, z1 = v1.x or 0, v1.y or 0, v1.z or 0
+    x2, y2, z2 = v2.x or 0, v2.y or 0, v2.z or 0
+    return Point(
+        x=y1*z2 - z1*y2,
+        y=z1*x2 - x1*z2,
+        z=x1*y2 - y1*x2
+    )
 
 
 def rotate(geometry: Union[Point, list], axis_start: Point, axis_end_or_direction: Union[Point, str], angle_rad: float, copy: bool = False, copy_quantity: int = 2) -> Union[Point, list]:
-    '''rotate 'geometry' (a Point or list of steps including Points) about an axis 
-    by a defined angle (radians). the axis is defined by two points for the axis_start 
-    and axis_end or by one point for axis_start and a direction 'x', 'y' or 'z'.
-    elements in a list that are not Points pass through and are replicated without
-    modification. if copy==True, multiple copies of 'geometry' are created, each
-    offset by 'vector' from the previous copy. 'copy_quantity' includes the position
-    of the original geometry. return the new geometry as a list (original geometry
-    is not edited).
+    '''rotate 'geometry' (a Point or list of steps including Points)
+    about the given axis by the given angle and return the rotated
+    geometry (original geometry is not edited). Non-Point elements in
+    a list pass through without modification.
+
+    Args:
+        geometry (Union[Point, list]): The geometry to rotate - a Point or list of Points/steps
+        axis_start (Point): Starting point of the rotation axis
+        axis_end_or_direction (Union[Point, str]): End point of rotation axis or direction ('x', 'y', 'z')
+        angle_rad (float): Angle in radians
+        copy (bool, optional): Whether to create multiple copies. Defaults to False.
+        copy_quantity (int, optional): Number of copies if copy=True. Defaults to 2.
+
+    Returns:
+        Union[Point, list]: The rotated geometry
     '''
-    if isinstance(axis_end_or_direction, Point):
+    # Handle string direction
+    if isinstance(axis_end_or_direction, str):
+        axis_end = Point(
+            x=axis_start.x + (1 if axis_end_or_direction == 'x' else 0),
+            y=axis_start.y + (1 if axis_end_or_direction == 'y' else 0),
+            z=axis_start.z + (1 if axis_end_or_direction == 'z' else 0)
+        )
+    else:
         axis_end = axis_end_or_direction
-    elif axis_end_or_direction == 'x':
-        axis_end = Point(x=axis_start.x+1, y=axis_start.y, z=axis_start.z)
-    elif axis_end_or_direction == 'y':
-        axis_end = Point(x=axis_start.x, y=axis_start.y+1, z=axis_start.z)
-    elif axis_end_or_direction == 'z':
-        axis_end = Point(x=axis_start.x, y=axis_start.y, z=axis_start.z+1)
 
     if copy:
         return rotate_copy_geometry(geometry, axis_start, axis_end, angle_rad, copy_quantity)
@@ -61,20 +84,26 @@ def rotate_geometry(geometry: Union[Point, list], axis_start: Point, axis_end: P
         point_new.y -= axis_start.y
         point_new.z -= axis_start.z
 
-        # Rodrigues' rotation formula to find point rotated about vector through origin
-        rotated_x = point_new.x*cos(angle_rad) + cross_product(axis, point_new).x*sin(angle_rad) + \
-            axis.x*dot_product(axis, point_new)*(1 - cos(angle_rad))
-        rotated_y = point_new.y*cos(angle_rad) + cross_product(axis, point_new).y*sin(angle_rad) + \
-            axis.y*dot_product(axis, point_new)*(1 - cos(angle_rad))
-        rotated_z = point_new.z*cos(angle_rad) + cross_product(axis, point_new).z*sin(angle_rad) + \
-            axis.z*dot_product(axis, point_new)*(1 - cos(angle_rad))
+        # Rotation using Rodriguez rotation formula
+        cos_theta = cos(angle_rad)
+        sin_theta = sin(angle_rad)
 
-        # offset away from origin
-        point_new.x = rotated_x + axis_start.x
-        point_new.y = rotated_y + axis_start.y
-        point_new.z = rotated_z + axis_start.z
+        # dot product with rotation axis
+        dot = dot_product(point_new, axis)
+        # cross product with rotation axis
+        cross = cross_product(axis, point_new)
+        
+        # rotate the point
+        x = point_new.x*cos_theta + cross.x*sin_theta + axis.x*dot*(1-cos_theta)
+        y = point_new.y*cos_theta + cross.y*sin_theta + axis.y*dot*(1-cos_theta)
+        z = point_new.z*cos_theta + cross.z*sin_theta + axis.z*dot*(1-cos_theta)
 
-        return point_new
+        # restore offset position
+        x += axis_start.x
+        y += axis_start.y
+        z += axis_start.z
+
+        return Point(x=x, y=y, z=z)
 
     if isinstance(geometry, Point):
         return rotate_point(geometry, axis_start, axis_end, angle_rad)

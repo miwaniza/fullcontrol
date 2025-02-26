@@ -41,6 +41,8 @@ def import_printer(printer_name: str, user_overrides: dict):
     print(f"Debug: library={library}")  # Debug print
     if printer_name not in library:
         raise ValueError(f"Printer '{printer_name}' not found in the library '{library_name}'")
+    if printer_name not in library:
+        raise ValueError(f"Printer '{printer_name}' not found in the library '{library_name}'")
     data = import_module(f'fullcontrol.devices.{library_name}.settings.{library[printer_name]}').default_initial_settings
     if library_name == 'cura':
         data['print_speed'] = int(data['print_speed']*60)

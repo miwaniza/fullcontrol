@@ -1,4 +1,3 @@
-
 from fullcontrol.geometry import Point, arcXY, variable_arcXY, elliptical_arcXY
 from math import tau
 
@@ -6,21 +5,30 @@ from math import tau
 def rectangleXY(start_point: Point, x_size: float, y_size: float, cw: bool = False) -> list:
     '''
     Generate a 2D XY rectangle starting and ending at a given Point (5 points returned), with specified size.
+    Points are generated in this order:
+    - Counter-clockwise (default): start -> up -> right -> down -> start
+    - Clockwise: start -> right -> up -> left -> start
     
     Args:
         start_point (Point): The starting point of the rectangle.
         x_size (float): The size of the rectangle in the X-axis.
-        y_size (float): The size of the rectangle in the Y-axis.
-        cw (bool, optional): Specifies the direction of the rectangle. 
+        y_size (float): Specifies the direction of the rectangle. 
             If True, the rectangle is generated in a clockwise direction. 
             If False (default), the rectangle is generated in a counter-clockwise direction.
     
     Returns:
         list: A list of five Points representing the rectangle. The list begins and ends with the same Point.
     '''
-    point1 = Point(x=start_point.x+x_size*(not cw), y=start_point.y + y_size*cw, z=start_point.z)  # boolean False=0
-    point2 = Point(x=start_point.x+x_size, y=start_point.y+y_size, z=start_point.z)
-    point3 = Point(x=start_point.x+x_size*cw, y=start_point.y+y_size*(not cw), z=start_point.z)
+    if cw:
+        # Clockwise: start -> right -> up -> left -> start
+        point1 = Point(x=start_point.x + x_size, y=start_point.y, z=start_point.z)
+        point2 = Point(x=start_point.x + x_size, y=start_point.y + y_size, z=start_point.z)
+        point3 = Point(x=start_point.x, y=start_point.y + y_size, z=start_point.z)
+    else:
+        # Counter-clockwise: start -> up -> right -> down -> start
+        point1 = Point(x=start_point.x, y=start_point.y + y_size, z=start_point.z)
+        point2 = Point(x=start_point.x + x_size, y=start_point.y + y_size, z=start_point.z)
+        point3 = Point(x=start_point.x + x_size, y=start_point.y, z=start_point.z)
     return [start_point.copy(), point1, point2, point3, start_point.copy()]
 
 

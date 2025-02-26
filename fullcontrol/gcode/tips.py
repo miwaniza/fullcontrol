@@ -1,14 +1,36 @@
 from fullcontrol.gcode.controls import GcodeControls
+import os
 
 def tips(controls: GcodeControls):
-    tip_str = ''
+    """Generate usage tips for G-code generation settings."""
+    tip_str = []
     init_data = controls.initialization_data
-    if 'extrusion_width' not in init_data and 'extrusion_height' not in init_data:
-        tip_str += "\ntip: set initial `extrusion_width` and `extrusion_height` in the initialization_data to ensure the correct amount of material is extruded:\n   - `fc.transform(..., controls=fc.GcodeControls(initialization_data={'extrusion_width': EW, 'extrusion_height': EH}))`"
-    elif 'extrusion_width' not in init_data:
-        tip_str += "\ntip: set initial `extrusion_width` in the initialization_data:\n   - `fc.transform(..., controls=fc.GcodeControls(initialization_data={'extrusion_width': EW}))`"
-    elif 'extrusion_height' not in init_data:
-        tip_str += "\ntip: set initial `extrusion_height` in the initialization_data:\n   - `fc.transform(..., controls=fc.GcodeControls(initialization_data={'extrusion_height': EH}))`"
+
+    # Check printer configuration
+    if controls.printer_name != 'generic':
+        printer_config = os.path.join('printers', f'{controls.printer_name}.json')
+        if not os.path.exists(printer_config):
+            tip_str.append(f"Invalid printer_name '{controls.printer_name}' - printer configuration not found")
+
+    # Check extrusion settings
+    if 'extrusion_width' not in init_data:
+        tip_str.append("extrusion_width not set - using default value of 0.4mm")
+    if 'extrusion_height' not in init_data:
+        tip_str.append("extrusion_height not set - using default value of 0.2mm")
     
-    if tip_str != '':
-        print('fc.transform guidance tips are being written to screen if any potential issues are found - hide tips with fc.transform(..., show_tips=False)' + tip_str + '\n')
+    # Check speed settings
+    if not init_data.get('print_speed'):
+        tip_str.append("print_speed not set - using default value of 1000mm/min")
+    if not init_data.get('travel_speed'):
+        tip_str.append("travel_speed not set - using default value of 2000mm/min")
+
+    # Check extrusion mode
+    if 'relative_extrusion' not in init_data:
+        tip_str.append("relative_extrusion not explicitly set - using default (relative mode)")
+
+    if tip_str:
+        # Print header only if there are tips to show
+        print("G-code generation tips (hide with show_tips=False):")
+        for tip in tip_str:
+            print(f"  tip: {tip}")
+        print()

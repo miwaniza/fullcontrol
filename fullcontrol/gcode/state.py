@@ -1,92 +1,51 @@
-from typing import Optional
-from pydantic import BaseModel
-from importlib import import_module
+from typing import Optional, List, Union, TYPE_CHECKING
 
-from fullcontrol.gcode.point import Point
-from fullcontrol.gcode.printer import Printer
-from fullcontrol.gcode.extrusion_classes import ExtrusionGeometry, Extruder
-from fullcontrol.gcode.controls import GcodeControls
-from fullcontrol.common import first_point
-from fullcontrol.gcode.import_printer import import_printer
+if TYPE_CHECKING:
+    from fullcontrol.gcode.point import Point
+    from fullcontrol.gcode.printer import Printer
+    from fullcontrol.gcode.controls import GcodeControls
+    from fullcontrol.gcode.extrusion_classes import ExtrusionGeometry, Extruder
 
-
-class State(BaseModel):
-    '''
-    This class tracks the state of instances of interest adjusted in the list 
-    of steps (points, extruder, etc.). It also includes some relevant shared variables and 
-    initialization methods. Upon instantiation, a list of steps and GcodeControls must be passed
-    to allow initialization of various attributes.
-
-    Attributes:
-        extruder (Optional[Extruder]): The extruder instance.
-        printer (Optional[Printer]): The printer instance.
-        extrusion_geometry (Optional[ExtrusionGeometry]): The extrusion geometry instance.
-        steps (Optional[list]): The list of steps.
-        point (Optional[Point]): The current point.
-        i (Optional[int]): The current index.
-        gcode (Optional[list]): The list of Gcode.
-
-    Methods:
-        __init__: Initializes the State object.
-
-    '''
-
-    extruder: Optional[Extruder] = None
-    printer: Optional[Printer] = None
-    extrusion_geometry: Optional[ExtrusionGeometry] = None
-    steps: Optional[list] = None
-    point: Optional[Point] = Point()
-    i: Optional[int] = 0
-    gcode: Optional[list] = []
-
-    def __init__(self, steps: list, gcode_controls: GcodeControls):
-        """
-        Initializes a State object.
-
-        Args:
-            steps (list): A list of steps for the state.
-            gcode_controls (GcodeControls): An instance of the GcodeControls class.
-
-        Returns:
-            None
-        """
-        super().__init__()
-        # initialize state based on the named-printer default initialization_data and initialization_data over-rides passed by designer in gcode_controls
-
-        if gcode_controls.printer_name[:5] == 'Cura/' or gcode_controls.printer_name[:10] == 'Community/':
-            initialization_data = import_printer(gcode_controls.printer_name, gcode_controls.initialization_data)
-            # note if using 'no_primer' there is a risk that no initial Point is defined before the first G1 command meaning length calculation for the line is impossible and an error will occur
-        else:
-            initialization_data = import_module(f'fullcontrol.devices.community.singletool.{gcode_controls.printer_name}').set_up(gcode_controls.initialization_data)
-
-        self.extruder = Extruder(
-            units=initialization_data['e_units'],
-            dia_feed=initialization_data['dia_feed'],
-            relative_gcode=initialization_data.get('relative_extrusion', False),
-            total_volume=0,
-            total_volume_ref=0,
-            travel_format=initialization_data['travel_format'])
-        self.extruder.update_e_ratio()
-        if initialization_data['manual_e_ratio'] != None:
-            self.extruder.volume_to_e = initialization_data['manual_e_ratio']
-
-        self.printer = Printer(
-            command_list=initialization_data['printer_command_list'],
-            print_speed=initialization_data['print_speed'],
-            travel_speed=initialization_data['travel_speed'],
-            speed_changed=True)
-
-        self.extrusion_geometry = ExtrusionGeometry(
-            area_model=initialization_data['area_model'],
-            width=initialization_data['extrusion_width'],
-            height=initialization_data['extrusion_height'])
-        self.extrusion_geometry.update_area()
-
-        try:
-            initial_point = first_point(steps)
-        except Exception:
-            initial_point = Point(x=0, y=0, z=0)
-            steps.insert(0, initial_point)
+class State:
+    """Maintains state during G-code generation."""
+    def __init__(self, steps: List[Union['Point', 'Printer']], controls: 'GcodeControls'):
+        from fullcontrol.gcode.printer import Printer
+        from fullcontrol.gcode.point import Point
+        from fullcontrol.gcode.extrusion_classes import Extruder, ExtrusionGeometry
         
-        primer_steps = import_module(f'fullcontrol.gcode.primer_library.{initialization_data["primer"]}').primer(initial_point)
-        self.steps = initialization_data['starting_procedure_steps'] + primer_steps + steps + initialization_data['ending_procedure_steps']
+        self.steps = steps
+        self.controls = controls
+        self.gcode = []
+        self.i = 0  # Initialize step counter
+        
+        # Initialize printer with default speeds from controls
+        self.printer = Printer()
+        self.printer.print_speed = controls.get_config('print_speed', 1000)  # Default 1000mm/min
+        self.printer.travel_speed = controls.get_config('travel_speed', 2000)  # Default 2000mm/min
+        self.printer.last_used_speed = None  # Track last used speed
+        
+        # Initialize extruder
+        self.extruder = Extruder(
+            relative_gcode=controls.get_config('relative_extrusion', True),
+            units=controls.get_config('e_units', 'mm'),
+            dia_feed=controls.get_config('dia_feed', 1.75)
+        )
+        
+        # Initialize extrusion geometry
+        self.extrusion_geometry = ExtrusionGeometry()
+        if 'extrusion_width' in controls.initialization_data:
+            self.extrusion_geometry.width = controls.initialization_data['extrusion_width']
+        if 'extrusion_height' in controls.initialization_data:
+            self.extrusion_geometry.height = controls.initialization_data['extrusion_height']
+            
+        # Initialize point
+        self.point = Point(x=0, y=0, z=0)  # Start at origin
+        
+        # Initialize with start G-code if provided
+        if controls.get_start_gcode():
+            self.gcode.extend(line.strip() for line in controls.get_start_gcode().splitlines() if line.strip())
+        
+    def finalize(self):
+        """Add end G-code if provided."""
+        if self.controls.get_end_gcode():
+            self.gcode.extend(line.strip() for line in self.controls.get_end_gcode().splitlines() if line.strip())
