@@ -51,6 +51,10 @@ class Point(BasePoint):
         g_command = "G1" if is_extrusion_move else "G0"
         speed = state.printer.print_speed if is_extrusion_move else state.printer.travel_speed
         
+        # Check if we need to override speed with Printer object setting
+        if state.printer.last_used_speed is not None:
+            speed = state.printer.last_used_speed
+        
         # Build coordinates string using XYZ_gcode for consistent formatting
         coords = []
         xyz = self.XYZ_gcode(state.point if state.point else Point())

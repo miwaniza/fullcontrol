@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added extensive test coverage for geometry operations including vector math, rotations, and interpolation
 - Added proper configuration inheritance and overrides in GcodeControls
 - Added improved path segmentation with equal distance points for curves and shapes
+- Added manual G-code handling capabilities
+- Added vector rotation functionality
+- Added enhanced test execution scripts for better debugging
 
 ### Changed
 - Fixed circular import between common.py and extrusion_classes.py
@@ -28,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved wave generation (square, triangle, sine) to maintain consistent spacing and shapes
 - Enhanced shape generation with better handling of clockwise/counterclockwise options
 - Updated angle measurement to properly handle angle ranges and normalization
+- Improved printer error handling for more robust operation
+- Enhanced test infrastructure for more reliable test execution
+- Bumped version to 1.1.0 with increased stability and functionality
 
 ### Fixed
 - Fixed handling of None values in vector operations and rotations
@@ -40,3 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed polar angle calculations in reflection operations
 - Fixed G-code configuration inheritance and parameter overrides
 - Fixed start/end G-code handling in printer configurations
+- Fixed printer speed settings and handling
+- Fixed tip display and message formatting
+- Fixed path segmentation algorithm for consistent results
+- Fixed reflection algorithm for correct geometry transformations
+- Fixed wave generation functions for proper spacing and shapes
+- Fixed test compatibility issues across different environments

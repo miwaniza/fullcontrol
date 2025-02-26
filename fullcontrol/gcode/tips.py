@@ -13,9 +13,9 @@ def tips(controls: GcodeControls):
             tip_str.append(f"Invalid printer_name '{controls.printer_name}' - printer configuration not found")
 
     # Check extrusion settings
-    if not init_data.get('extrusion_width'):
+    if 'extrusion_width' not in init_data:
         tip_str.append("extrusion_width not set - using default value of 0.4mm")
-    if not init_data.get('extrusion_height'):
+    if 'extrusion_height' not in init_data:
         tip_str.append("extrusion_height not set - using default value of 0.2mm")
     
     # Check speed settings

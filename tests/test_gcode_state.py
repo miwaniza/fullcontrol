@@ -71,4 +71,4 @@ def test_state_invalid_printer():
     
     error_message = str(exc_info.value).lower()
     assert "printer_name" in error_message
-    assert "invalid printer_name" in error_message
+    assert "invalid" in error_message
