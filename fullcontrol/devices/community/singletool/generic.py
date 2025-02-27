@@ -38,8 +38,7 @@ def set_up(user_overrides: dict):
     initialization_data = {**initialization_data, **user_overrides}
 
     starting_procedure_steps = []
-    starting_procedure_steps.append(ManualGcode(
-        text='; Time to print!!!!!\n; GCode created with FullControl - tell us what you\'re printing!\n; info@fullcontrol.xyz or tag FullControlXYZ on Twitter/Instagram/LinkedIn/Reddit/TikTok'))
+    starting_procedure_steps.append(ManualGcode('; Time to print!!!!!\n; GCode created with FullControl - tell us what you\'re printing!\n; info@fullcontrol.xyz or tag FullControlXYZ on Twitter/Instagram/LinkedIn/Reddit/TikTok'))
     starting_procedure_steps.append(Extruder(relative_gcode=initialization_data["relative_e"]))
     if 'bed_temp' in user_overrides.keys():
         starting_procedure_steps.append(Buildplate(temp=initialization_data["bed_temp"], wait=False))
@@ -52,11 +51,9 @@ def set_up(user_overrides: dict):
     if 'fan_percent' in user_overrides.keys():
         starting_procedure_steps.append(Fan(speed_percent=initialization_data["fan_percent"]))
     if 'print_speed_percent' in user_overrides.keys():
-        starting_procedure_steps.append(ManualGcode(
-            text='M220 S' + str(initialization_data["print_speed_percent"])+' ; set speed factor override percentage'))
+        starting_procedure_steps.append(ManualGcode('M220 S' + str(initialization_data["print_speed_percent"])+' ; set speed factor override percentage'))
     if 'material_flow_percent' in user_overrides.keys():
-        starting_procedure_steps.append(ManualGcode(
-            text='M221 S' + str(initialization_data["material_flow_percent"])+' ; set extrude factor override percentage'))
+        starting_procedure_steps.append(ManualGcode('M221 S' + str(initialization_data["material_flow_percent"])+' ; set extrude factor override percentage'))
 
     ending_procedure_steps = []
 
