@@ -3,8 +3,37 @@ import fullcontrol.devices.community.singletool.base_settings as base_settings
 
 
 def set_up(user_overrides: dict):
-    ''' DO THIS
-    '''
+    """
+    Set up a tool-changing 3D printer configuration using Tool 0.
+    
+    This function initializes the settings for a printer with tool-changing capabilities,
+    specifically configured to use Tool 0. It combines default settings from base_settings.py
+    with user-defined overrides to generate comprehensive starting and ending procedures.
+    
+    The starting procedure includes:
+    - Homing the printer
+    - Selecting Tool 0
+    - Setting bed and hotend temperatures
+    - Configuring coordinate systems and units
+    - Setting extrusion mode
+    - Priming the nozzle
+    - Setting up speeds and flow rates
+    
+    The ending procedure includes:
+    - Retracting filament
+    - Raising the print bed
+    - Turning off fans and heaters
+    - Parking the toolhead
+    - Dropping off the tool
+    
+    Args:
+        user_overrides (dict): User-provided settings that override default settings.
+            Common keys include 'bed_temp', 'nozzle_temp', 'fan_percent', etc.
+    
+    Returns:
+        dict: A dictionary containing all initialization data, including starting
+            and ending procedure steps.
+    """
 
     # overrides for this specific printer relative those defined in base_settings.py
     printer_overrides = {}

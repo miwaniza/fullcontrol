@@ -3,8 +3,33 @@ import fullcontrol.devices.community.singletool.base_settings as base_settings
 
 
 def set_up(user_overrides: dict):
-    ''' DO THIS
-    '''
+    """
+    Set up a generic single-tool 3D printer configuration.
+    
+    This function initializes the printer settings by combining default settings 
+    from base_settings.py with printer-specific overrides and user-defined overrides.
+    It generates the starting and ending procedure steps for the print job.
+    
+    The generic configuration includes:
+    - Setting relative extrusion mode
+    - Setting temperatures for bed and hotend if specified
+    - Setting fan speed if specified
+    - Setting print speed and material flow percentage if specified
+    
+    Args:
+        user_overrides (dict): User-provided settings that override both default
+            and printer-specific settings. Common keys include 'bed_temp', 'nozzle_temp',
+            'fan_percent', etc.
+    
+    Returns:
+        dict: A dictionary containing all initialization data, including starting
+            and ending procedure steps.
+    
+    Example:
+        >>> import fullcontrol as fc
+        >>> initialization_data = set_up({'bed_temp': 60, 'nozzle_temp': 210})
+        >>> starting_steps = initialization_data['starting_procedure_steps']
+    """
 
     # overrides for this specific printer relative those defined in base_settings.py
     printer_overrides = {'primer': 'travel'}

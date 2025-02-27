@@ -5,10 +5,14 @@ from fullcontrol.common import BaseModelPlus
 class Printer(BaseModelPlus):
     """
     A class representing a 3D printer.
+    
+    This class manages printer-specific settings like printing and travel speeds.
+    It inherits from BaseModelPlus and provides methods for updating printer state
+    and generating G-code commands.
 
     Attributes:
-        print_speed (Optional[int]): The speed at which the printer prints, in units per minute.
-        travel_speed (Optional[int]): The speed at which the printer moves between printing locations, in units per minute.
+        print_speed (Optional[float]): The speed at which the printer prints, in units per minute.
+        travel_speed (Optional[float]): The speed at which the printer moves between printing locations, in units per minute.
         speed_changed (Optional[bool]): Flag to track if speed settings have changed.
     """
     print_speed: Optional[float] = None
@@ -16,7 +20,18 @@ class Printer(BaseModelPlus):
     speed_changed: Optional[bool] = False
 
     def update_from(self, other):
-        """Update this printer's attributes from another printer instance."""
+        """
+        Update this printer's attributes from another printer instance.
+        
+        This method updates the print_speed and travel_speed attributes if they are 
+        defined in the source object, and marks the speed_changed flag accordingly.
+        
+        Parameters:
+            other: Another Printer instance to copy attributes from.
+            
+        Returns:
+            None
+        """
         super().update_from(other)
         if other.print_speed is not None:
             self.print_speed = other.print_speed
@@ -26,7 +41,20 @@ class Printer(BaseModelPlus):
             self.speed_changed = True
 
     def gcode(self, state):
-        """Generate G-code for printer settings changes."""
+        """
+        Generate G-code for printer settings changes.
+        
+        This method updates the printer state with the current printer settings
+        and marks the speed_changed flag if speeds are changed. The actual G-code
+        generation for speed changes is typically handled elsewhere in the toolpath
+        generation process.
+        
+        Parameters:
+            state: The current state object that maintains printer settings.
+            
+        Returns:
+            str: An empty string as this method only updates state.
+        """
         if self.print_speed is not None:
             state.printer.print_speed = self.print_speed
             state.printer.speed_changed = True

@@ -26,6 +26,16 @@ sooner:
     - one directory in that will be for cura
         - include script to extract printer profiles from cura library and state which commit of the cura repo to pull and the git command to do that, full-variable folder, filtered-variable json folder, minimal variable folder (duplicated in main fc repo), and bin folder
 
+- enhance test coverage with additional test types:
+    - integration tests to verify component interactions:
+        - test full geometry generation pipelines
+        - test transformations between coordinate systems
+        - test complete workflow from model design to gcode generation
+    - end-to-end tests for complete workflows:
+        - test notebook examples functionality end-to-end
+        - validate output gcode structure and syntax for various printers
+        - test visualization pipeline from model to rendered output
+
 later:
 - refactor documentation - [issue](https://github.com/FullControlXYZ/fullcontrol/issues/10)
 - update website (www.fullcontrol.xyz) to have more information and have normal website sections? Release website code as open-source repo.
@@ -43,3 +53,8 @@ later:
 - area control (e.g. printer farms with microcontrollers)
 - factory control (e.g. production line(s))
 - enterprise control (e.g. multiple factories)
+
+- additional advanced testing:
+    - performance testing for large model generation
+    - cross-platform compatibility testing
+    - stress testing for edge cases and complex geometries

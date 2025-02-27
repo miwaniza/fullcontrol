@@ -3,6 +3,17 @@ from fullcontrol.common import Point
 from typing import Union
 
 def stop(message: str):
+    """
+    Stops execution and exits the program with an error message.
+    
+    This function prints a formatted error message and then terminates the program execution.
+    
+    Parameters:
+        message (str): The error message to display before exiting.
+    
+    Returns:
+        None: This function does not return as it exits the program.
+    """
     from sys import exit
     print(f'---------------------------------------------------------\n   {message}\n---------------------------------------------------------')
     exit()
@@ -35,7 +46,25 @@ def check(steps: list):
 
 
 def fix(steps: list, result_type: str, controls):
+    """
+    Fix common issues in a list of steps to prepare it for processing.
     
+    This function performs several checks and fixes on a list of steps:
+    1. Flattens the list if it contains nested lists
+    2. Ensures the first point has all coordinates defined
+    3. Validates color attributes for plot results
+    
+    Parameters:
+        steps (list): The list of steps to fix
+        result_type (str): The type of result being generated ('plot', 'gcode', etc.)
+        controls: The controls object with settings for the result generation
+    
+    Returns:
+        list: The fixed list of steps
+    
+    Raises:
+        SystemExit: If a fatal error is encountered, the program will exit
+    """
     types = set(type(step).__name__ for step in steps)
     if "list" in types:
         print("warning - the list of steps should be a 1D list of fullcontrol class instances, it currently includes a 'list'\n   - fc.flatten() is being used to convert the design to a 1D list")
@@ -57,6 +86,23 @@ def fix(steps: list, result_type: str, controls):
     return steps
 
 def check_points(geometry: Union[Point, list], check: str):
+    """
+    Validate points against specific criteria based on the check type.
+    
+    This function performs validation on one or more points based on the specified check type.
+    Currently supported checks:
+    - 'polar_xy': Ensures points have both x and y values defined for polar transformations
+    
+    Parameters:
+        geometry (Union[Point, list]): A single Point or list of steps that may contain Points
+        check (str): The type of check to perform, must be one of the valid check types
+    
+    Returns:
+        None
+    
+    Raises:
+        Exception: If the check type is invalid or if a point fails validation
+    """
     valid_checks = ['polar_xy']  # Add other valid checks here as needed
     if check not in valid_checks:
         raise Exception(f"Invalid check type '{check}'. Valid types are: {valid_checks}")

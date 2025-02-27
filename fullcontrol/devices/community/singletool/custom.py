@@ -3,8 +3,27 @@ import fullcontrol.devices.community.singletool.base_settings as base_settings
 
 
 def set_up(user_overrides: dict):
-    ''' DO THIS
-    '''
+    """
+    Set up a custom single-tool 3D printer configuration.
+    
+    This function initializes the printer settings by combining default settings 
+    from base_settings.py with printer-specific overrides and user-defined overrides.
+    The custom printer configuration differs from the generic configuration in that
+    it uses absolute extrusion mode by default and has no primer.
+    
+    This configuration is intended for users who want more customization control
+    over their printer setup. The function generates both starting and ending procedure
+    steps for the print job based on the provided settings.
+    
+    Args:
+        user_overrides (dict): User-provided settings that override both default
+            and printer-specific settings. Common keys include 'bed_temp', 'nozzle_temp',
+            'fan_percent', 'relative_e', etc.
+    
+    Returns:
+        dict: A dictionary containing all initialization data, including starting
+            and ending procedure steps.
+    """
 
     # overrides for this specific printer relative those defined in base_settings.py
     printer_overrides = {'primer': 'no_primer', 'relative_e': False}
@@ -33,7 +52,7 @@ def set_up(user_overrides: dict):
     if 'material_flow_percent' in user_overrides.keys():
         starting_procedure_steps.append(ManualGcode(
             text='M221 S' + str(initialization_data["material_flow_percent"])+' ; set extrude factor override percentage'))
-
+    
     ending_procedure_steps = []
 
     initialization_data['starting_procedure_steps'] = starting_procedure_steps
